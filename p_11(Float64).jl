@@ -3,9 +3,11 @@
 using LinearAlgebra
 using Printf
 using BenchmarkTools
+#using Quadmath
+using DoubleFloats
+#setprecision(BigFloat, 128)
 
-
-#BLAS.set_num_threads(16)  # Set the number of threads 
+#BLAS.set_num_threads(4)  # Set the number of threads 
 
 
 using SymmetricTensors
@@ -14,9 +16,9 @@ using SymmetricTensors
 const eta = Float64(0)
 const nu = Float64(0)
 Lmin = 4
-Lmax = 48
+Lmax = 16
 const m = Float64(0.0)
-const theta = Float64(pi/5)
+const theta = Float64(pi)/Float64(5)
 const c_sw = Float64(1)
 const rho = 1
 
@@ -44,14 +46,14 @@ const P_minus = Int64.(0.5 * (id - gamma0))
 
 # Define background fields
 # Calculate the phi  values
-const phi1 = eta - pi / Float64(3)
+const phi1 = eta - Float64(pi) / Float64(3)
 const phi2 = eta * (nu - Float64(1) / Float64(2))
-const phi3 = -eta * (nu + Float64(1) / Float64(2)) + pi / Float64(3)
+const phi3 = -eta * (nu + Float64(1) / Float64(2)) + Float64(pi) / Float64(3)
 
 # Calculate the phi prime values
-const phi1_prime = -phi1 - Float64(4) * pi / Float64(3)
-const phi2_prime = -phi3 + Float64(2) * pi / Float64(3)
-const phi3_prime = -phi2 + Float64(2) * pi / Float64(3)
+const phi1_prime = -phi1 - Float64(4) * Float64(pi) / Float64(3)
+const phi2_prime = -phi3 + Float64(2) * Float64(pi) / Float64(3)
+const phi3_prime = -phi2 + Float64(2) * Float64(pi) / Float64(3)
 
 # Create arrays for phi and phi prime
 const phis,phis_prime  = [phi1, phi2, phi3],[phi1_prime, phi2_prime, phi3_prime]
@@ -131,10 +133,10 @@ function Calculate_BandB_prime(L::Int64,t::Int64,p::Array{Float64},n_c::Int64)
             detab[k] = tempk - temp
             detac[k] = tempk + temp
             
-            gamma_sumb .+= gamma[k] * b[k]
-            gamma_sumc .+= gamma[k] * c[k]
-            gamma_sumdetab .+= gamma[k] * detab[k]
-            gamma_sumdetac .+= gamma[k] * detac[k]
+            gamma_sumb += gamma[k] * b[k]
+            gamma_sumc += gamma[k] * c[k]
+            gamma_sumdetab += gamma[k] * detab[k]
+            gamma_sumdetac += gamma[k] * detac[k]
 
             sum_q2 += q2[k]^2
             detad += (t * detaomega + detar[k]) * q1[k]
@@ -144,9 +146,9 @@ function Calculate_BandB_prime(L::Int64,t::Int64,p::Array{Float64},n_c::Int64)
     d = 1 + m + 0.5*sum_q2  
 
 
-    B = P_minus * ( gamma_sumc * (id - gamma_sumb) + d^2 * id) .+ P_plus * (id - gamma_sumb)  
+    B = P_minus * ( gamma_sumc * (id - gamma_sumb) + d^2 * id) + P_plus * (id - gamma_sumb)  
 
-    B_prime = P_minus * ( gamma_sumdetac * (id - gamma_sumb) - (gamma_sumc) * (gamma_sumdetab) + 2 * d * detad * id) .-P_plus * gamma_sumdetab  
+    B_prime = P_minus * ( gamma_sumdetac * (id - gamma_sumb) - (gamma_sumc) * (gamma_sumdetab) + 2 * d * detad * id) - P_plus * gamma_sumdetab  
 
     return B, B_prime
 
@@ -173,7 +175,7 @@ function Sum_trace(L::Int64)
         for n_c in 1:3
             @inbounds begin
                 
-                p .= ( (2pi) .* n .+ theta) ./ L_s
+                p .= ( (2Float64(pi)) .* n .+ theta) ./ L_s
 
 
                 #Mt(1)=B(1)
@@ -216,7 +218,7 @@ p_11_array = Array{Float64}(undef, Lmax - Lmin + 1)
 for l in Lmin:Lmax
     @inbounds begin
         L = l
-        k_normc = 12 * L^2 * (sin(pi / (3 * L^2)) + sin( 2pi / (3 * L^2)))
+        k_normc = 12 * L^2 * (sin(Float64(pi) / (3 * L^2)) + sin( 2Float64(pi) / (3 * L^2)))
         p_11_array[l-Lmin+1] = Sum_trace(L)/k_normc
         println("L=$L completed")
     end
