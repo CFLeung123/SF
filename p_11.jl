@@ -30,11 +30,13 @@ println("eta=$eta   nu=$nu   Lmin=$Lmin   Lmax=$Lmax   m=$m   theta=$theta   c_s
 # Define gamma matrices
     
 const gamma0 = Diagonal([1, 1, -1, -1]) # gamma0
-const gamma = [ [0 0 0 -im; 0 0 -im 0; 0 im 0 0; im 0 0 0],  # gamma1
-[0 0 0 1; 0 0 -1 0; 0 -1 0 0; 1 0 0 0],  # gamma2
-[0 0 im 0; 0 0 0 -im; -im 0 0 0; 0 im 0 0] # gamma3
-]
+const gamma = [ 
+    Complex{Int64}[0 0 0 -im; 0 0 -im 0; 0 im 0 0; im 0 0 0],  # gamma1
+    Complex{Int64}[0 0 0 1; 0 0 -1 0; 0 -1 0 0; 1 0 0 0],  # gamma2
+    Complex{Int64}[0 0 im 0; 0 0 0 -im; -im 0 0 0; 0 im 0 0] # gamma3
+    ]
 const gamma5 = [0 0 1 0; 0 0 0 1; 1 0 0 0; 0 1 0 0] # gamma5
+
 
 # Define 4x4 identity matrix 
 const id =  Diagonal([1,1,1,1])
