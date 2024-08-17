@@ -135,10 +135,10 @@ function Calculate_BandB_prime(L::Int64,t::Int64,p::Array{Double64},n_c::Int64)
             detab[k] = tempk - temp
             detac[k] = tempk + temp
             
-            gamma_sumb .+= gamma[k] * b[k]
-            gamma_sumc .+= gamma[k] * c[k]
-            gamma_sumdetab .+= gamma[k] * detab[k]
-            gamma_sumdetac .+= gamma[k] * detac[k]
+            gamma_sumb += gamma[k] * b[k]
+            gamma_sumc += gamma[k] * c[k]
+            gamma_sumdetab += gamma[k] * detab[k]
+            gamma_sumdetac += gamma[k] * detac[k]
 
             sum_q2 += q2[k]^2
             detad += (t * detaomega + detar[k]) * q1[k]
@@ -213,9 +213,10 @@ end
 
 
 
-@time begin
 
 p_11_array = Array{Double64}(undef, Lmax - Lmin + 1)
+
+@time begin
 
 for l in Lmin:Lmax
     @inbounds begin
@@ -241,7 +242,6 @@ end
 
 #@btime Sum_trace(16)
 #@btime Sum_trace_parallel(16)
-
 
 
 
