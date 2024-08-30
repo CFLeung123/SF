@@ -15,7 +15,7 @@ using SymmetricTensors
 const eta =   Double64(0)
 const nu =   Double64(0)
 Lmin = 4
-Lmax = 20
+Lmax = 64
 const m =   Double64(0.0)
 const theta =   Double64(pi/5)
 const c_sw =   Double64(1)
@@ -88,37 +88,37 @@ end
 
 
 # matrix B and B' with fixed time , spatial momentum and color(background fields).
-function Calculate_BandB_prime(L::Int64,t::Int64,p::Array{  Double64},n_c::Int64)
+function Calculate_BandB_prime(L::Int64,t::Int64,p::Array{Double64},n_c::Int64)
     # Initialize color related parameters
-    omega =    Double64((phis_prime[n_c]- phis[n_c])/L^2) 
-    detaomega =   Double64((detaphis_prime[n_c] - detaphis[n_c])/L^2)
+    omega =  Double64((phis_prime[n_c]- phis[n_c])/L^2) 
+    detaomega = Double64((detaphis_prime[n_c] - detaphis[n_c])/L^2)
 
     # Initialize 
-    r = zeros(  Double64,3)
-    detar = fill(  Double64(detaphis[n_c] / L) ,3)
-    q0 = fill(  Double64(omega * t),3) #q_k
-    q1 = zeros(  Double64,3) #\tilde{q}_k
-    q2 = zeros(  Double64,3) #hat{q}_k
-    b = zeros(Complex{  Double64}, 3)
-    c = zeros(Complex{  Double64}, 3)
-    detab = zeros(Complex{  Double64}, 3)
-    detac = zeros(Complex{  Double64}, 3)
-    p0k = Complex{  Double64}(im*sin(omega))
-    pp0k = Complex{  Double64}(im*cos(omega)) #dp0k/dω
+    r = zeros(Double64,3)
+    detar = fill(Double64(detaphis[n_c] / L) ,3)
+    q0 = fill(Double64(omega * t),3) #q_k
+    q1 = zeros(Double64,3) #\tilde{q}_k
+    q2 = zeros(Double64,3) #hat{q}_k
+    b = zeros(Complex{Double64}, 3)
+    c = zeros(Complex{Double64}, 3)
+    detab = zeros(Complex{Double64}, 3)
+    detac = zeros(Complex{Double64}, 3)
+    p0k = Complex{Double64}(im*sin(omega))
+    pp0k = Complex{Double64}(im*cos(omega)) #dp0k/dω
     temp = 0.5 * c_sw * detaomega * pp0k  
     temp1 = 0.5 * c_sw * p0k  
 
-    gamma_sumb = zeros(Complex{  Double64},4,4)
-    gamma_sumc = zeros(Complex{  Double64},4,4)
-    gamma_sumdetab = zeros(Complex{  Double64},4,4)
-    gamma_sumdetac = zeros(Complex{  Double64},4,4)
+    gamma_sumb = zeros(Complex{Double64},4,4)
+    gamma_sumc = zeros(Complex{Double64},2,4)#[3:4,1:4]
+    gamma_sumdetab = zeros(Complex{Double64},4,4)
+    gamma_sumdetac = zeros(Complex{Double64},2,4)#[3:4,1:4]
     # Compute coefficient function d and derivative
-    sum_q2 =   Double64(0)
-    detad =   Double64(0)
+    sum_q2 = Double64(0)
+    detad = Double64(0)
     
     # Compute coefficients and derivatives
     for k in 1:3
-        @inbounds begin
+          begin
             r[k] = phis[n_c] / L + p[k]   
             q0[k] += r[k]   
             q1[k] = sin(q0[k])  
@@ -133,9 +133,9 @@ function Calculate_BandB_prime(L::Int64,t::Int64,p::Array{  Double64},n_c::Int64
             detac[k] = tempk + temp
             
             gamma_sumb += gamma[k] * b[k]
-            gamma_sumc += gamma[k] * c[k]
+            gamma_sumc[1:2,1:2] += gamma[k][3:4,1:2] * c[k]
             gamma_sumdetab += gamma[k] * detab[k]
-            gamma_sumdetac += gamma[k] * detac[k]
+            gamma_sumdetac[1:2,1:2] += gamma[k][3:4,1:2] * detac[k]
 
             sum_q2 += q2[k]^2
             detad += (t * detaomega + detar[k]) * q1[k]
@@ -144,16 +144,22 @@ function Calculate_BandB_prime(L::Int64,t::Int64,p::Array{  Double64},n_c::Int64
 
     d = 1 + m + 0.5*sum_q2  
 
+    # Calculate B and B_prime using P_+ and P_- partitions
+    B = zeros(Complex{Double64},4,4)
+    B_prime = zeros(Complex{Double64},4,4)
+    
 
-    B = P_minus * ( gamma_sumc * (id - gamma_sumb) + d^2 * id) .+ P_plus * (id - gamma_sumb)  
+    # Optimised gamma_sumc,gamma_sumdetac to 2x4 matrices
+    B[3:4,1:4] =  gamma_sumc * (id - gamma_sumb) + d^2 * id[3:4,1:4]
+    B[1:2,1:4] = id[1:2,1:4] - gamma_sumb[1:2,1:4]
 
-    B_prime = P_minus * ( gamma_sumdetac * (id - gamma_sumb) - (gamma_sumc) * (gamma_sumdetab) + 2 * d * detad * id) .-P_plus * gamma_sumdetab  
+    B_prime[3:4,1:4] = gamma_sumdetac * (id - gamma_sumb) - gamma_sumc * gamma_sumdetab + 2 * d * detad * id[3:4,1:4] 
+    B_prime[1:2,1:4] = -gamma_sumdetab[1:2,1:4]
 
-    B_dot = P_minus * 2*d 
+    B_dot  = P_minus*2*d
+    B_dotprime = P_minus*2*detad
 
-    B_dotprime = P_minus * 2 * detad 
-
-    return B, B_prime, B_dot, B_dotprime
+    return B, B_prime,B_dot,B_dotprime
 
 end
 
@@ -172,6 +178,7 @@ end
 
 function Sum_trace(L::Int64)
     sum =   Double64(0) 
+    sum2 = Double64(0) #sum for derivative over mass
     L_s = Int64(L * rho)
     p = Array{  Double64}(undef, 3)
     for n in pyramidindices(3, L_s)
@@ -183,10 +190,10 @@ function Sum_trace(L::Int64)
 
                 #Mt(1)=B(1)P_-
                 B, B_prime,B_dot, B_dotprime = Calculate_BandB_prime(L, 1, p, n_c)
-                Mt = B*P_minus
-                Mt_prime = B_prime*P_minus
-                Mt_dot = B_dot*P_minus
-                Mt_dotprime = B_dotprime*P_minus
+                Mt = B[1:4,3:4]
+                Mt_prime = B_prime[1:4,3:4]
+                Mt_dot = B_dot[1:4,3:4]
+                Mt_dotprime = B_dotprime[1:4,3:4]
                 #recursion
                 for t in 2:(L-1)
                     @inbounds begin
@@ -198,10 +205,10 @@ function Sum_trace(L::Int64)
                     end
                 end
                 #project to subspace
-                Mt= P_minus*Mt
-                Mt_prime = P_minus*Mt_prime
-                M = Mt[end-1:end, end-1:end]
+                M = Mt[3:4, 1:2]
                 M_prime = Mt_prime[end-1:end, end-1:end]
+                M_dot = Mt_dot[end-1:end, end-1:end]
+                M_dotprime = Mt_dotprime[end-1:end, end-1:end]
                 #=
                 println("M")
                 print_mat(M,3)
@@ -210,19 +217,22 @@ function Sum_trace(L::Int64)
                 print_mat(M_prime,3)
                 println(" ");
                 =#
-                sum += symfactor(n[1], n[2], n[3]) * tr(inv(M) * M_prime).re
-
+                M_inv = inv(M)
+                sum += symfactor(n[1], n[2], n[3]) * tr(M_inv * M_prime).re
+                sum2 += symfactor(n[1], n[2], n[3]) * (tr(-M_inv * M_dot * M_inv * M_prime).re + tr(M_inv*M_dotprime).re)
             end
         end
     end
 
-    return sum
+    return sum,sum2
 end
 
 
 
 
-p_11_array = Array{  Double64}(undef, Lmax - Lmin + 1)
+p_11_array = Array{ Double64}(undef, Lmax - Lmin + 1)
+p_11_dot_array = Array{ Double64}(undef, Lmax - Lmin + 1)
+
 
 @time begin
 
@@ -230,7 +240,9 @@ for l in Lmin:Lmax
     @inbounds begin
         L = l
         k_normc = 12 * L^2 * (sin(pi / (3 * L^2)) + sin( 2pi / (3 * L^2)))
-        p_11_array[l-Lmin+1] = Sum_trace(L)/k_normc
+        sum,sumdot = Sum_trace(L)
+        p_11_array[l-Lmin+1] =sum/k_normc
+        p_11_dot_array[l-Lmin+1] =sumdot/k_normc
         println("L=$L completed")
     end
 end
@@ -241,6 +253,14 @@ for l in 1:Lmax-Lmin+1
         println("p_11(L=$L)=  ",p_11_array[l])
     end
 end
+for l in 1:Lmax-Lmin+1
+    @inbounds begin
+        L = l-1+Lmin
+        println(' ')
+        println("dot(p)_11(L=$L)=  ",p_11_dot_array[l])
+    end
+end
+
 
 
 end
