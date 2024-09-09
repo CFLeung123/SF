@@ -123,39 +123,48 @@ p_11(L=63)=  -6.90372340602227089587353702731964408e-02
 p_11(L=64)=  -6.91797701198507738256311266573499721e-02
 """
 
+#Extrapolation
 using DoubleFloats
-
+using Quadmath
 const delta = 1
 const Lmin = 4
-const Lmax = 64
 
 # Extract the numbers using a regular expression
 f = [parse(Double64, match(r"[-+]?\d*\.\d+([eE][-+]?\d+)?", line).match) for line in split(input_text, '\n') if !isempty(line)]
-# Print the array of numbers
-#println(f)
+
+
+
 
 function R0(f)
-    R0f = Array{ Double64}(undef, length(f)-delta)
+    R0f = Array{Float128}(undef, length(f) - delta)
     for L in 1:length(f)-delta
-        R0f[L]=L/delta*(f[L+delta]-f[L])
+        R0f[L] = Float128(L / delta) * (f[L+delta] - f[L])
     end
     return R0f
 end
 
-function Rnu(nu,f)
-    Rnuf = Array{ Double64}(undef, length(f)-delta)
+function Rnu(nu, f)
+    Rnuf = Array{Float128}(undef, length(f) - delta)
     for L in 1:length(f)-delta
-        Rnuf[L] = f[L] + L/(nu*delta)*(f[L+delta]-f[L])
+        Rnuf[L] = f[L] + Float128(L / (nu * delta)) * (f[L+delta] - f[L])
     end
     return Rnuf
 end
 
-final = Rnu(1,Rnu(1,R0(f)))
+function R2R2R1R1R0f(f)
+    final = Rnu(2, Rnu(2, Rnu(1, Rnu(1, R0(f)))))
 
-for l in 1:length(final)
-    @inbounds begin
-        L = l-1+Lmin
-        println(' ')
-        println("R1 R1 R0 f(L=$L)=  ",final[l])
+    for l in 1:length(final)
+        @inbounds begin
+            L = l - 1 + Lmin
+            println(' ')
+            println("Final(L=$L)= ", final[l])
+            println("Abs error=  ", final[l] + 1 / (12 * Float128(pi)^2))
+            println("%error=  ", 100 * (final[l] * (-12 * Float128(pi)^2) - 1))
+        end
     end
 end
+
+R2R2R1R1R0f(f)
+println(" -------------------------------------------------------- ")
+
