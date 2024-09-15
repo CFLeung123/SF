@@ -151,7 +151,7 @@ function Rnu(nu, f)
     return Rnuf
 end
 
-function R2R2R1R1R0f(f)
+function extrapolationf(f)
     final = Rnu(2, Rnu(2, Rnu(1, Rnu(1, R0(f)))))
 
     for l in 1:length(final)
@@ -165,6 +165,5 @@ function R2R2R1R1R0f(f)
     end
 end
 
-R2R2R1R1R0f(f)
+extrapolationf(f)
 println(" -------------------------------------------------------- ")
-
