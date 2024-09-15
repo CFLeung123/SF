@@ -30,8 +30,8 @@ function Rnu(nu, f)
     return Rnuf
 end
 
-function R2R2R1R1R0f(f)
-    final = Rnu(2, Rnu(2, Rnu(1, Rnu(1, R0(f)))))
+function extrapolationf(f)
+    final =Rnu(3,Rnu(3,Rnu(2, Rnu(2, Rnu(1, Rnu(1, R0(f)))))))
 
     for l in 1:length(final)
         @inbounds begin
@@ -44,6 +44,5 @@ function R2R2R1R1R0f(f)
     end
 end
 
-R2R2R1R1R0f(f)
+extrapolationf(f)
 println(" -------------------------------------------------------- ")
-#R2R2R1R1R0f(f2)
