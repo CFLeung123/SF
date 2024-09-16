@@ -127,7 +127,7 @@ p_11(L=64)=  -6.91797701198377485347864655488524213e-02
 using DoubleFloats
 using Quadmath
 const delta = 1
-const Lmin = 1
+const Lmin = 4
 
 # Extract the numbers using a regular expression
 f = [parse(Float128, match(r"[-+]?\d*\.\d+([eE][-+]?\d+)?", line).match) for line in split(input_text, '\n') if !isempty(line)]
@@ -152,7 +152,7 @@ function Rnu(nu, f)
 end
 
 function extrapolationf(f)
-    final =Rnu(3,Rnu(3,Rnu(2, Rnu(2, Rnu(1, Rnu(1, R0(f)))))))
+    final =Rnu(5,Rnu(5,Rnu(4,Rnu(4,Rnu(3,Rnu(3,Rnu(2, Rnu(2, Rnu(1, Rnu(1, R0(f)))))))))))
 
     for l in 1:length(final)
         @inbounds begin
