@@ -152,7 +152,7 @@ function Rnu(nu, f)
 end
 
 function extrapolationf(f)
-    final = Rnu(2, Rnu(2, Rnu(1, Rnu(1, R0(f)))))
+    final =Rnu(3,Rnu(3,Rnu(2, Rnu(2, Rnu(1, Rnu(1, R0(f)))))))
 
     for l in 1:length(final)
         @inbounds begin
