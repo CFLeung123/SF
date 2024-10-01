@@ -15,9 +15,9 @@ using SymmetricTensors
 const eta =   Double64(0)
 const nu =   Double64(0)
 Lmin = 4
-Lmax = 64
+Lmax = 16
 const m =   Double64(0.0)
-const theta =   Double64(pi/5)
+const theta =   Double64(pi)/5
 const c_sw =   Double64(1)
 const rho = 1
 
@@ -45,14 +45,14 @@ const P_minus = Int64.(0.5 * (id - gamma0))
 
 # Define background fields
 # Calculate the phi  values
-const phi1 = eta - pi /   Double64(3)
+const phi1 = eta - Double64(pi) /   Double64(3)
 const phi2 = eta * (nu -   Double64(1) /   Double64(2))
-const phi3 = -eta * (nu +   Double64(1) /   Double64(2)) + pi /   Double64(3)
+const phi3 = -eta * (nu +   Double64(1) /   Double64(2)) + Double64(pi) /   Double64(3)
 
 # Calculate the phi prime values
-const phi1_prime = -phi1 -   Double64(4) * pi /   Double64(3)
-const phi2_prime = -phi3 +   Double64(2) * pi /   Double64(3)
-const phi3_prime = -phi2 +   Double64(2) * pi /   Double64(3)
+const phi1_prime = -phi1 -   Double64(4) * Double64(pi) /   Double64(3)
+const phi2_prime = -phi3 +   Double64(2) * Double64(pi) /   Double64(3)
+const phi3_prime = -phi2 +   Double64(2) * Double64(pi) /   Double64(3)
 
 # Create arrays for phi and phi prime
 const phis,phis_prime  = [phi1, phi2, phi3],[phi1_prime, phi2_prime, phi3_prime]
@@ -180,12 +180,12 @@ function Sum_trace(L::Int64)
     sum =   Double64(0) 
     sum2 = Double64(0) #sum for derivative over mass
     L_s = Int64(L * rho)
-    p = Array{  Double64}(undef, 3)
+    p = Array{Double64}(undef, 3)
     for n in pyramidindices(3, L_s)
         for n_c in 1:3
             @inbounds begin
                 
-                p .= ( (2pi) .* n .+ theta) ./ L_s
+                p .= ( (2Double64(pi)) .* n .+ theta) ./ L_s
 
 
                 #Mt(1)=B(1)P_-
@@ -239,7 +239,7 @@ p_11_dot_array = Array{ Double64}(undef, Lmax - Lmin + 1)
 for l in Lmin:Lmax
     @inbounds begin
         L = l
-        k_normc = 12 * L^2 * (sin(pi / (3 * L^2)) + sin( 2pi / (3 * L^2)))
+        k_normc = 12 * L^2 * (sin(Double64(pi) / (3 * L^2)) + sin( 2Double64(pi) / (3 * L^2)))
         sum,sumdot = Sum_trace(L)
         p_11_array[l-Lmin+1] =sum/k_normc
         p_11_dot_array[l-Lmin+1] =sumdot/k_normc
