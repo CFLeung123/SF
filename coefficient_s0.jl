@@ -137,16 +137,18 @@ print(f)
 
 function R0(f)
     R0f = Array{Float128}(undef, length(f) - delta)
-    for L in 1:length(f)-delta
-        R0f[L] = Float128(L / delta) * (f[L+delta] - f[L])
+    for i in 1:length(f)-delta
+        L = i - 1 + Lmin
+        R0f[i] = Float128(L / delta) * (f[i+delta] - f[i])
     end
     return R0f
 end
 
 function Rnu(nu, f)
     Rnuf = Array{Float128}(undef, length(f) - delta)
-    for L in 1:length(f)-delta
-        Rnuf[L] = f[L] + Float128(L / (nu * delta)) * (f[L+delta] - f[L])
+    for i in 1:length(f)-delta
+        L = i - 1 + Lmin
+        Rnuf[i] = f[i] + Float128(L / (nu * delta)) * (f[i+delta] - f[i])
     end
     return Rnuf
 end
