@@ -163,16 +163,17 @@ end
 
 function extrapolationf(f)
     final = Rnu(2,Rnu(2,Rnu(1,Rnu(1,f))))
-    println("    final = Rnu(3,Rnu(3,Rnu(2,Rnu(2,Rnu(1,Rnu(1,f))))))")
     for l in 1:length(final)
         @inbounds begin
             L = l - 1 + Lmin
+            final[l] = L*(f[l]-final[l])
             println(' ')
-            println("Final(L=$L)= ", final[l])
-
+        println("F1(L=$L)= ", final[l])
         end
     end
+    return final
 end
+
 
 for i in 1:length(f)
     L = Lmin-1+i
@@ -180,6 +181,13 @@ for i in 1:length(f)
     println(' ')
     println("f(L=$L)/L= ", f[i])
 end
-
 println(" -------------------------------------------------------- ")
-extrapolationf(f)
+final1 = extrapolationf(f)
+final = Rnu(2,Rnu(2,Rnu(1,Rnu(1,R0(final1)))))
+for l in 1:length(final)
+    @inbounds begin
+        L = l - 1 + Lmin
+        println(' ')
+        println("Final(L=$L)= ", final[l])
+    end
+end

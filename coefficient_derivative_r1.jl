@@ -1,3 +1,6 @@
+#using Pkg;Pkg.add("Plots")
+using Plots
+
 # Define the input text
 input_text = """
 dot(p)_11(L=4)=  4.06644614491804513441452566932349009e-02
@@ -162,17 +165,18 @@ function scale(f)
 end
 
 function extrapolationf(f)
-    final = Rnu(2,Rnu(2,Rnu(1,Rnu(1,f))))
-    println("    final = Rnu(3,Rnu(3,Rnu(2,Rnu(2,Rnu(1,Rnu(1,f))))))")
+    final =  Rnu(2,Rnu(2,Rnu(1,Rnu(1,f))))
     for l in 1:length(final)
         @inbounds begin
             L = l - 1 + Lmin
+            final[l] = L*(f[l]-final[l])
             println(' ')
-            println("Final(L=$L)= ", final[l])
-
+        println("F1(L=$L)= ", final[l])
         end
     end
+    return final
 end
+
 
 for i in 1:length(f)
     L = Lmin-1+i
@@ -180,6 +184,17 @@ for i in 1:length(f)
     println(' ')
     println("f(L=$L)/L= ", f[i])
 end
-
 println(" -------------------------------------------------------- ")
-extrapolationf(f)
+final1 = extrapolationf(f)
+final = Rnu(3,Rnu(3,Rnu(2,Rnu(2,Rnu(1,Rnu(1,final1))))))
+for l in 1:length(final)
+    @inbounds begin
+        L = l - 1 + Lmin
+        println(' ')
+        println("Final(L=$L)= ", final[l])
+    end
+end
+
+Lrange = Lmin:length(final)+Lmin-1
+plot(Lrange, final,seriestype=:scatter,ms=2, ma=0.5, label="Final", xlabel="L", ylabel="Final", title="Plot of Final vs L")
+hline!([0.012], label="r1' = 0.012", linestyle=:dash, color=:red)
