@@ -1,6 +1,6 @@
 #using Pkg;Pkg.add("Plots")
 using Plots
-
+using Quadmath
 # Define the input text
 input_text = """
 dot(p)_11(L=4)=  4.06644614491804513441452566932349009e-02
@@ -127,8 +127,6 @@ dot(p)_11(L=64)=  6.23764276118451353777034352799139406e-01
 """
 
 #Extrapolation
-using DoubleFloats
-using Quadmath
 const delta = 1
 const Lmin = 4
 
@@ -156,13 +154,7 @@ function Rnu(nu, f)
     return Rnuf
 end
 
-function scale(f)
-    for i in 1:length(f)
-        L = Lmin -1+i
-        f[i] = (1+1/Float128(2L))*f[i]
-    end
-    return f
-end
+
 
 function extrapolationf(f)
     final =  Rnu(2,Rnu(2,Rnu(1,Rnu(1,f))))
@@ -177,7 +169,7 @@ function extrapolationf(f)
     return final
 end
 
-
+# scale by 1/L
 for i in 1:length(f)
     L = Lmin-1+i
     f[i] = f[i] / L
@@ -187,14 +179,19 @@ end
 println(" -------------------------------------------------------- ")
 final1 = extrapolationf(f)
 final = Rnu(3,Rnu(3,Rnu(2,Rnu(2,Rnu(1,Rnu(1,final1))))))
+error = Float128[]
 for l in 1:length(final)
-    @inbounds begin
         L = l - 1 + Lmin
         println(' ')
         println("Final(L=$L)= ", final[l])
-    end
+        x = (Float128(final[l])-0.012)/0.012*100
+        append!(error, x)
+        println("%error = $x %")
 end
 
+#Plots
 Lrange = Lmin:length(final)+Lmin-1
-plot(Lrange, final,seriestype=:scatter,ms=2, ma=0.5, label="Final", xlabel="L", ylabel="Final", title="Plot of Final vs L")
-hline!([0.012], label="r1' = 0.012", linestyle=:dash, color=:red)
+p1 = plot(Lrange, final,seriestype=:scatter,ms=2, ma=0.5, label="Final", xlabel="L", ylabel="Final", title="Plot of Final vs L")
+p1 = hline!([0.012], label="r1' = 0.012", linestyle=:dash, color=:red)
+p3 = plot(30:length(final)+Lmin-1, error[27:length(final)], label="%error", xlabel="L", ylabel="%error", title="Plot of %errors from L=30")
+plot(p1, p3, layout=(2,1))
