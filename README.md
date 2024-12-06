@@ -1,4 +1,4 @@
-p11overm for mass derivatives
+p11overm for both p11 and its mass derivatives. Use this for final coefficient extrapolation
 
 
 
