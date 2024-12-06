@@ -1,4 +1,4 @@
-p11overm for both p11 and its mass derivatives. Use this for final coefficient extrapolation
+p11overm.jl for both p11 and its mass derivatives. Use this for final coefficient extrapolation
 
 
 
