@@ -1,3 +1,15 @@
+p11overm for mass derivatives
+
+
+
+
+
+
+
+
+
+
+
 [[motivation:::constrain standard model (PDG and FLAG report on quark mass) ]]
 
 r0'+O(a^2)=R1R1p11'
