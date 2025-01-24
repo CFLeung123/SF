@@ -1,4 +1,5 @@
 https://arxiv.org/pdf/2501.06633
+
 EM effect U(1) on the running of coupling
 compute EM effect step scaling strong coupling
 QED + QCD in strong coupling
