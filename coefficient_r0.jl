@@ -154,7 +154,7 @@ function Rnu(nu, f)
 end
 
 function extrapolationf(f)
-    final = Rnu(3,Rnu(3,Rnu(2,Rnu(2,Rnu(1,Rnu(1,f))))))
+    final = Rnu(2,Rnu(2,Rnu(1,Rnu(1,f))))
     for l in 1:length(final)
         @inbounds begin
             L = l - 1 + Lmin
@@ -167,7 +167,7 @@ end
 
 for i in 1:length(f)
     L = i-1+Lmin
-    f[i] =  f[i] + 1 / (12 * Float128(pi)^2)*log(L)
+    f[i] =  f[i] + 1 / (12 * Float128(pi)^2)*Float128(log(L))
 end
 extrapolationf(f)
 println(" -------------------------------------------------------- ")
