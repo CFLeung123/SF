@@ -165,15 +165,15 @@ end
 
 function extrapolationf(f)
     shifted_f = shiftf(f)
-    r0f = Rnu(2, Rnu(2, Rnu(1, Rnu(1, shifted_f))))
-    println(r0f)                                    # why r0f does not work?
+    r0f =  R0(shifted_f)
     r0 = -3.46648579283159934768016463262725566e-02
     final = similar(r0f, Float128)
     log_term = -1 / (12 * Float128(pi)^2)
 
     @views for l in 1:length(r0f)
         L = l - 1 + Lmin
-        final[l] = L * (f[l] - (r0) - (log_term * Float128(log(L))))
+        final[l] = -r0f[l]*L
+        #final[l] = L * (f[l] - (r0f[l]) - (log_term * Float128(log(L))))
         println(' ')
         println("F1(L=$L)= ", final[l])
     end
@@ -199,6 +199,6 @@ end
 
 #Plots
 Lrange = Lmin:length(final)+Lmin-1
-p1 = plot(Lmin:length(final)+Lmin-1, final, seriestype=:scatter, ms=2, ma=0.5, label="Final", xlabel="L", ylabel="Final", title="Plot of Final vs L")
-p3 = plot(20:length(final)+Lmin-1, error[17:length(final)], label="%error", xlabel="L", ylabel="%error", title="Plot of %errors")
+p1 = plot(40:length(final)+Lmin-11, final[37:length(final)-10], seriestype=:scatter, ms=2, ma=0.5, label="Final", xlabel="L", ylabel="Final", title="Plot of Final vs L")
+p3 = plot(40:length(final)+Lmin-1, error[37:length(final)], label="%error", xlabel="L", ylabel="%error", title="Plot of %errors")
 plot(p1, p3, layout=(2, 1))
