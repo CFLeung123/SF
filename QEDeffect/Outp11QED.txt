@@ -1,3 +1,6 @@
+const Q = 2   #uptype Q=+2 downtype Q=-1
+const photon_prime = -Double64(pi) / 3 * coup_e * Q 
+const photon = -Double64(pi) * coup_e * Q 
 
 p_11(L=4)=  -3.33731709500960503922571796168356568e-02
 
