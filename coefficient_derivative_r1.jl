@@ -191,7 +191,7 @@ end
 
 #Plots
 Lrange = Lmin:length(final)+Lmin-1
-p1 = plot(Lrange, final,seriestype=:scatter,ms=2, ma=0.5, label="Final", xlabel="L", ylabel="Final", title="Plot of Final vs L")
+p1 = plot(45:length(final)+Lmin-1, final[42:length(final)],seriestype=:scatter,ms=1, ma=0.5, label="Final", xlabel="L", ylabel="Final", title="Plot of Final vs L")
 p1 = hline!([0.012], label="r1' = 0.012", linestyle=:dash, color=:red)
 p3 = plot(30:length(final)+Lmin-1, error[27:length(final)], label="%error", xlabel="L", ylabel="%error", title="Plot of %errors from L=30")
 plot(p1, p3, layout=(2,1))
