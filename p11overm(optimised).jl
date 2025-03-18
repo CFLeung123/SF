@@ -16,7 +16,7 @@ using SymmetricTensors
 const eta = 0
 const nu = 0
 Lmin = 4
-Lmax = 48
+Lmax = 24
 const m = 0
 const theta = Double64(pi) / 5
 const c_sw = 1
@@ -29,18 +29,18 @@ println("eta=$eta   nu=$nu   Lmin=$Lmin   Lmax=$Lmax   m=$m   theta=$theta   c_s
 
 # Define gamma matrices
 
-const gamma0 = Diagonal([1, 1, -1, -1]) # gamma0
-const gamma = [[0 0 0 -im; 0 0 -im 0; 0 im 0 0; im 0 0 0],  # gamma1
-    [0 0 0 1; 0 0 -1 0; 0 -1 0 0; 1 0 0 0],  # gamma2
-    [0 0 im 0; 0 0 0 -im; -im 0 0 0; 0 im 0 0] # gamma3
+const gamma0 = SMatrix{4,4}(Diagonal([1, 1, -1, -1])) # gamma0
+const gamma = [SMatrix{4,4}([0 0 0 -im; 0 0 -im 0; 0 im 0 0; im 0 0 0]),  # gamma1
+SMatrix{4,4}([0 0 0 1; 0 0 -1 0; 0 -1 0 0; 1 0 0 0]),  # gamma2
+SMatrix{4,4}([0 0 im 0; 0 0 0 -im; -im 0 0 0; 0 im 0 0]) # gamma3
 ]
-const gamma5 = [0 0 1 0; 0 0 0 1; 1 0 0 0; 0 1 0 0] # gamma5
+const gamma5 = SMatrix{4,4}([0 0 1 0; 0 0 0 1; 1 0 0 0; 0 1 0 0]) # gamma5
 
 # Define 4x4 identity matrix 
-const id = Diagonal([1, 1, 1, 1])
+const id = SMatrix{4,4}(Diagonal([1, 1, 1, 1]))
 # Define P_+ and P_- constants
-const P_plus = Int64.(0.5 * (id + gamma0))
-const P_minus = Int64.(0.5 * (id - gamma0))
+const P_plus = SMatrix{4,4}(Int64.(0.5 * (id + gamma0)))
+const P_minus = SMatrix{4,4}(Int64.(0.5 * (id - gamma0)))
 
 
 
@@ -148,7 +148,8 @@ function Calculate_BandB_prime(L::Int64, t::Int64, p::Array{Double64}, n_c::Int6
     # Calculate B and B_prime using P_+ and P_- partitions
     B =@MMatrix zeros(Complex{Double64}, 4, 4)
     B_prime =@MMatrix zeros(Complex{Double64}, 4, 4)
-
+    B_dot = @MMatrix zeros(Complex{Double64}, 4, 4)
+    B_dotprime = @MMatrix zeros(Complex{Double64}, 4, 4)
 
     # Optimised gamma_sumc,gamma_sumdetac to 2x4 matrices
     B[3:4, 1:4] = gamma_sumc * (id - gamma_sumb) + d^2 * id[3:4, 1:4]
