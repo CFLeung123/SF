@@ -16,7 +16,7 @@ using SymmetricTensors
 const eta = 0
 const nu = 0
 Lmin = 4
-Lmax = 24
+Lmax = 64
 const m = 0
 const theta = Double64(pi) / 5
 const c_sw = 1
