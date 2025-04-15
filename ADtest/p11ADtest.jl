@@ -6,7 +6,7 @@ using BenchmarkTools
 using DoubleFloats
 using StaticArrays
 
-BLAS.set_num_threads(4)  # Set the number of threads 
+BLAS.set_num_threads(1)  # Set the number of threads 
 
 
 using SymmetricTensors
@@ -15,15 +15,18 @@ using ForwardDiff
 # Define the parameters
 const nu = Double64(0)
 Lmin = 4
-Lmax = 16
+Lmax = 48
 const theta = Double64(pi) / 5
 const c_sw = 1
 const rho = 1
-eta = Double64(0)
-nu = Double64(0)
-m0 = Double64(0)
+const coup_e = sqrt(4 * Double64(pi) * Double64(0.0072973525693))
+const Q = 0   #uptype Q=+2 downtype Q=-1
+const photon_prime = -Double64(pi) * 2 / 3 * coup_e * Q
+const photon = 0
+#const photon_prime = 0 # QED off
+#const photon = 0 # QED off
 
-println("Lmin=$Lmin   Lmax=$Lmax   theta=$theta   c_sw=$c_sw   L(space)= $rho *L(time) ")
+println("Lmin=$Lmin   Lmax=$Lmax   theta=$theta   c_sw=$c_sw   L(space)= $rho *L(time)  Q=$Q")
 
 
 
@@ -162,13 +165,9 @@ function build_Mdotprime(n_c::Int, L::Int, eta, nu::Double64, m0, p::SVector{3,D
     ForwardDiff.derivative(eta_var -> dM_dm(m0, eta_var), eta)
 end
 
-function det_2dfast(M::SMatrix{2,2,T}) where T
-    return M[1,1]*M[2,2] - M[1,2]*M[2,1]
-end
-
-function Sum_det(L::Int64, eta, nu::Double64, m0)
-    sums = Double64(0)
-    sums2 = Double64(0) #sum for derivative over mass
+function Sum_trace(L::Int64)
+    sum = Double64(0)
+    sum2 = Double64(0) #sum for derivative over mass
     L_s = Int64(L * rho)
    
     for n in pyramidindices(3, L_s)
@@ -176,16 +175,22 @@ function Sum_det(L::Int64, eta, nu::Double64, m0)
             @inbounds begin
 
                 p = SVector{3,Double64}(((2Double64(pi)) .* n .+ theta) ./ L_s)
-               
+                eta = Double64(0)
+                m0 = Double64(0)
+                M = build_M(n_c,L,eta,nu,m0,p)
+                M_inv = inv(M)
+                M_dot = build_Mdot(n_c,L,eta,nu,m0,p)
+                M_prime = build_Mprime(n_c,L,eta,nu,m0,p)
+                M_dotprime = build_Mdotprime(n_c,L,eta,nu,m0,p)
+                
 
-                #compute matrices and derivatives
-                M_static = SMatrix(build_M(n_c,L,eta,nu,m0,p))
-                sums += symfactor(n[1], n[2], n[3]) * log(real(det_2dfast(M_static)))
+                sum += symfactor(n[1], n[2], n[3]) * tr(SMatrix{2,2}(M_inv) * SMatrix{2,2}(M_prime)).re
+                sum2 += symfactor(n[1], n[2], n[3]) * (tr(-SMatrix{2,2}(M_inv) * SMatrix{2,2}(M_dot) * SMatrix{2,2}(M_inv) * SMatrix{2,2}(M_prime)).re + tr(SMatrix{2,2}(M_inv) * SMatrix{2,2}(M_dotprime)).re)
             end
         end
     end
 
-    return sums
+    return sum, sum2
 end
 
 
@@ -201,9 +206,9 @@ p_11_dot_array = Array{Double64}(undef, Lmax - Lmin + 1)
         @inbounds begin
             L = l
             k_normc = 12 * L^2 * (sin(Double64(pi) / (3 * L^2)) + sin(2Double64(pi) / (3 * L^2)))
-            deta_detsum = ForwardDiff.derivative(eta_var -> Sum_det(L,eta_var,nu,m0), eta)
-            p_11_array[l-Lmin+1] = deta_detsum / k_normc
-            #p_11_dot_array[l-Lmin+1] = sumdot / k_normc
+            sum, sumdot = Sum_trace(L)
+            p_11_array[l-Lmin+1] = sum / k_normc
+            p_11_dot_array[l-Lmin+1] = sumdot / k_normc
             println("L=$L completed")
         end
     end
@@ -214,15 +219,14 @@ p_11_dot_array = Array{Double64}(undef, Lmax - Lmin + 1)
             println("p_11(L=$L)=  ", p_11_array[l])
         end
     end
-#=     for l in 1:Lmax-Lmin+1
+    for l in 1:Lmax-Lmin+1
         @inbounds begin
             L = l - 1 + Lmin
             println(' ')
             println("dot(p)_11(L=$L)=  ", p_11_dot_array[l])
         end
-    end =#
+    end
 
 
 
 end
-
