@@ -12,23 +12,23 @@ BLAS.set_num_threads(14)  # Set the number of threads
 using SymmetricTensors
 
 # Define the parameters
-const eta = 0
+eta = 0
 const nu = 0
 Lmin = 4
 Lmax = 48
-const m = 0
+m = 0
 const theta = Double64(pi) / 5
 const c_sw = 1
 const rho = 1
 const coup_e = sqrt(4 * Double64(pi) * Double64(0.0072973525693))
-const Q = -1   #uptype Q=+2 downtype Q=-1
-const photon_prime = -Double64(pi)*2 / 3 * coup_e * Q 
-const photon = 0
-#const photon_prime = 0 # QED off
-#const photon = 0 # QED off
+Q = Double64(+2/3)   #uptype Q=+2/3 downtype Q=-1/3
+# photon = \varphi * Q * \frac{e}{a}
+const phiQED = Double64(0.01)
+const phipQED = Double64(-0.01)
+#const phiQED = 0 # QED off
+#const phiprimeQED = 0 # QED off
 
 println("eta=$eta   nu=$nu   Lmin=$Lmin   Lmax=$Lmax   m=$m   theta=$theta   c_sw=$c_sw   L(space)= $rho *L(time) ")
-
 
 
 
@@ -49,24 +49,62 @@ const P_minus = SMatrix{4,4}(Int64.(0.5 * (id - gamma0)))
 
 
 # Define background fields
-# Calculate the phi  values
-const phi1 = eta - Double64(pi) / Double64(3)
-const phi2 = eta * (nu - Double64(1) / Double64(2))
-const phi3 = -eta * (nu + Double64(1) / Double64(2)) + Double64(pi) / Double64(3)
+function compute_phi(n_c::Int, eta, Q)
+    if n_c == 1
+        phi = eta - Double64(pi) / 3 + phiQED * coup_e * Q
+    elseif n_c == 2
+        phi = eta * (nu - 0.5) + phiQED * coup_e * Q
+    elseif n_c == 3
+        phi = -eta * (nu + 0.5) + Double64(pi) / 3 + phiQED * coup_e * Q
+    else
+        error("Invalid n_c: must be 1, 2, or 3.")
+    end
+    return phi
+end
 
-# Calculate the phi prime values
-const phi1_prime = -phi1 - Double64(4) * Double64(pi) / Double64(3)
-const phi2_prime = -phi3 + Double64(2) * Double64(pi) / Double64(3)
-const phi3_prime = -phi2 + Double64(2) * Double64(pi) / Double64(3)
+function compute_phiprime(n_c::Int, eta, Q)
+    if n_c == 1
+        phip = -(eta - Double64(pi) / 3) - Double64(pi) * 4 / 3
+    elseif n_c == 2
+        phip = -(-eta * (nu + 0.5) + Double64(pi) / 3) + Double64(pi) * 2 / 3
+    elseif n_c == 3
+        phip = -(eta * (nu - 0.5)) + Double64(pi) * 2 / 3
+    else
+        error("Invalid n_c: must be 1, 2, or 3.")
+    end
+    return phip
+end
+function compute_detaphi(n_c::Int, eta, Q)
+    if n_c == 1
+        detaphi = Double64(1)
+    elseif n_c == 2
+        detaphi = nu - Double64(1) / Double64(2)
+    elseif n_c == 3
+        detaphi = -(nu + Double64(1) / Double64(2))
+    else
+        error("Invalid n_c: must be 1, 2, or 3.")
+    end
+    return detaphi
+end
 
-# Create arrays for phi and phi prime
-const phis = [phi1 + photon, phi2 + photon, phi3 + photon]
-const phis_prime = [phi1_prime + photon_prime, phi2_prime + photon_prime, phi3_prime + photon_prime]
+function compute_detaphiprime(n_c::Int, eta, Q)
+    if n_c == 1
+        detaphip = -Double64(1)
+    elseif n_c == 2
+        detaphip = nu + Double64(1) / Double64(2)
+    elseif n_c == 3
+        detaphip = -(nu - Double64(1) / Double64(2))
+    else
+        error("Invalid n_c: must be 1, 2, or 3.")
+    end
+    return detaphip
+end
 
+#=
 # Function to calculate eta derivatives
-const detaphis = [Double64(1), nu - Double64(1) / Double64(2), -(nu + Double64(1) / Double64(2))]
+const detaphis = [ Double64(1), nu - Double64(1) / Double64(2), -(nu + Double64(1) / Double64(2))]
 const detaphis_prime = [-Double64(1), nu + Double64(1) / Double64(2), -(nu - Double64(1) / Double64(2))]
-
+=#
 
 
 
@@ -93,14 +131,18 @@ end
 
 
 # matrix B and B' with fixed time , spatial momentum and color(background fields).
-function Calculate_BandB_prime(L::Int64, t::Int64, p::Array{Double64}, n_c::Int64)
+function Calculate_BandB_prime(L::Int64, t::Int64, p::Array{Double64}, n_c::Int64,Q)
     # Initialize color related parameters
-    omega = Double64((phis_prime[n_c] - phis[n_c]) / L^2)
-    detaomega = Double64((detaphis_prime[n_c] - detaphis[n_c]) / L^2)
+    phi = compute_phi(n_c,eta,Q)
+    phi_prime = compute_phiprime(n_c,eta,Q)
+    detaphi = compute_detaphi(n_c,eta,Q)
+    detaphi_prime = compute_detaphiprime(n_c,eta,Q)
+    omega = Double64((phi_prime - phi) / L^2)
+    detaomega = Double64((detaphi_prime - detaphi) / L^2)
 
     # Initialize 
     r = zeros(Double64, 3)
-    detar = fill(Double64(detaphis[n_c] / L), 3)
+    detar = fill(Double64(detaphi / L), 3)
     q0 = fill(Double64(omega * t), 3) #q_k
     q1 = zeros(Double64, 3) #\tilde{q}_k
     q2 = zeros(Double64, 3) #hat{q}_k
@@ -124,7 +166,7 @@ function Calculate_BandB_prime(L::Int64, t::Int64, p::Array{Double64}, n_c::Int6
     # Compute coefficients and derivatives
     for k in 1:3
         begin
-            r[k] = phis[n_c] / L + p[k]
+            r[k] = phi / L + p[k]
             q0[k] += r[k]
             q1[k] = sin(q0[k])
             q2[k] = 2 * sin(0.5 * q0[k])
@@ -182,25 +224,25 @@ function symfactor(a::Int64, b::Int64, c::Int64)::Int64
 end
 
 
-function Sum_trace(L::Int64)
+function Sum_trace(L::Int64,Q)
     sum = Double64(0)
     sum2 = Double64(0) #sum for derivative over mass
     L_s = Int64(L * rho)
     p = Array{Double64}(undef, 3)
 
-    B = @MMatrix zeros(Complex{Double64}, 4, 4)
-    B_dot = @MMatrix zeros(Complex{Double64}, 4, 4)
-    B_prime = @MMatrix zeros(Complex{Double64}, 4, 4)
-    B_dotprime = @MMatrix zeros(Complex{Double64}, 4, 4)
-    M = @MMatrix zeros(Complex{Double64}, 4, 4)
-    M_inv = @MMatrix zeros(Complex{Double64}, 4, 4)
-    M_dot = @MMatrix zeros(Complex{Double64}, 4, 4)
-    M_prime = @MMatrix zeros(Complex{Double64}, 4, 4)
-    M_dotprime = @MMatrix zeros(Complex{Double64}, 4, 4)
-    Mt = MMatrix{4,2}(B[1:4, 3:4])
-    Mt_prime = MMatrix{4,2}(B_prime[1:4, 3:4])
-    Mt_dot = MMatrix{4,2}(B_dot[1:4, 3:4])
-    Mt_dotprime = MMatrix{4,2}(B_dotprime[1:4, 3:4])
+    B = @SMatrix zeros(Complex{Double64}, 4, 4)
+    B_dot = @SMatrix zeros(Complex{Double64}, 4, 4)
+    B_prime = @SMatrix zeros(Complex{Double64}, 4, 4)
+    B_dotprime = @SMatrix zeros(Complex{Double64}, 4, 4)
+    M = @SMatrix zeros(Complex{Double64}, 4, 4)
+    M_inv = @SMatrix zeros(Complex{Double64}, 4, 4)
+    M_dot = @SMatrix zeros(Complex{Double64}, 4, 4)
+    M_prime = @SMatrix zeros(Complex{Double64}, 4, 4)
+    M_dotprime = @SMatrix zeros(Complex{Double64}, 4, 4)
+    Mt = SMatrix{4,2}(B[1:4, 3:4])
+    Mt_prime = SMatrix{4,2}(B_prime[1:4, 3:4])
+    Mt_dot = SMatrix{4,2}(B_dot[1:4, 3:4])
+    Mt_dotprime = SMatrix{4,2}(B_dotprime[1:4, 3:4])
 
     for n in pyramidindices(3, L_s)
         for n_c in 1:3
@@ -210,15 +252,15 @@ function Sum_trace(L::Int64)
 
 
                 #Mt(1)=B(1)P_-
-                B, B_prime, B_dot, B_dotprime = Calculate_BandB_prime(L, 1, p, n_c)
-                Mt = MMatrix{4,2}(B[1:4, 3:4])
-                Mt_prime = MMatrix{4,2}(B_prime[1:4, 3:4])
-                Mt_dot = MMatrix{4,2}(B_dot[1:4, 3:4])
-                Mt_dotprime = MMatrix{4,2}(B_dotprime[1:4, 3:4])
+                B, B_prime, B_dot, B_dotprime = Calculate_BandB_prime(L, 1, p, n_c ,Q)
+                Mt = SMatrix{4,2}(B[1:4, 3:4])
+                Mt_prime = SMatrix{4,2}(B_prime[1:4, 3:4])
+                Mt_dot = SMatrix{4,2}(B_dot[1:4, 3:4])
+                Mt_dotprime = SMatrix{4,2}(B_dotprime[1:4, 3:4])
                 #recursion
                 for t in 2:(L-1)
                     @inbounds begin
-                        B, B_prime, B_dot, B_dotprime = Calculate_BandB_prime(L, t, p, n_c)
+                        B, B_prime, B_dot, B_dotprime = Calculate_BandB_prime(L, t, p, n_c,Q)
                         Mt_dotprime = B_dotprime * Mt + B_dot * Mt_prime + B_prime * Mt_dot + B * Mt_dotprime
                         Mt_dot = B_dot * Mt + B * Mt_dot
                         Mt_prime = B_prime * Mt + B * Mt_prime
@@ -261,7 +303,7 @@ p_11_dot_array = Array{Double64}(undef, Lmax - Lmin + 1)
         @inbounds begin
             L = l
             k_normc = 12 * L^2 * (sin(Double64(pi) / (3 * L^2)) + sin(2Double64(pi) / (3 * L^2)))
-            sum, sumdot = Sum_trace(L)
+            sum, sumdot = Sum_trace(L,Q)
             p_11_array[l-Lmin+1] = sum / k_normc
             p_11_dot_array[l-Lmin+1] = sumdot / k_normc
             println("L=$L completed")
