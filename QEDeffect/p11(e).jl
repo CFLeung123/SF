@@ -23,10 +23,10 @@ const rho = 1
 #coup_e = 0 #QED off
 coup_e = 1
 const coup_e_base = sqrt(4 * Float64(pi) * Float64(0.0072973525693))
-const Q = Float64(+2 / 3)   #uptype Q=+2/3 downtype Q=-1/3
+const Q = Float64(-1 / 3)   #uptype Q=+2/3 downtype Q=-1/3
 # photon = \varphi * Q * \frac{e}{a}
 const phiQED = Float64(0)
-const phipQED = Float64(pi/5)
+const phipQED = Float64(2*pi/5)
 
 
 println("eta=$eta   nu=$nu   Lmin=$Lmin   Lmax=$Lmax   m=$m   theta=$theta   c_sw=$c_sw   L(space)= $rho *L(time) ")
@@ -307,7 +307,7 @@ using Plots
         =#
         for j in 1:15
             @inbounds begin
-                coup_es = 10 * (j-1)*coup_e_base
+                coup_es = 5 * (j-1)*coup_e_base
                 sumtrace = Sum_trace(L, coup_es)
                 p_11 = sumtrace / k_normc
 
