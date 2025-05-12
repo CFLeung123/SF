@@ -25,8 +25,8 @@ coup_e = 1
 const coup_e_base = sqrt(4 * Float64(pi) * Float64(0.0072973525693))
 const Q = Float64(-1 / 3)   #uptype Q=+2/3 downtype Q=-1/3
 # photon = \varphi * Q * \frac{e}{a}
-const phiQED = Float64(0)
-const phipQED = Float64(2*pi/5)
+const phiQED = Float64(pi/3)
+const phipQED = Float64(pi/3)
 
 
 println("eta=$eta   nu=$nu   Lmin=$Lmin   Lmax=$Lmax   m=$m   theta=$theta   c_sw=$c_sw   L(space)= $rho *L(time) ")
@@ -291,28 +291,28 @@ using Plots
 
 @time begin
     results = Dict{Int,Vector{Tuple{Float64,Float64}}}()
-    for i in 0:2
+    for i in 0:1
         p_data = Tuple{Float64,Float64}[]
         L = Lmin + i * 4
         k_normc = 12 * L^2 * (sin(Float64(pi) / (3 * L^2)) + sin(2Float64(pi) / (3 * L^2)))
 
-        #=
+        
         coup_es = 0
         sumtrace = Sum_trace(L, coup_es)
-        p_11 = sumtrace / k_normc
+        p_11_zero = sumtrace / k_normc
 
-        push!(p_data, (Float64(coup_es), Float64(p_11)))
+        push!(p_data, (Float64(coup_es), Float64(0)))
         println(' ')
-        println("p_11(L=$L,e=$coup_es)=  ", p_11)
-        =#
+        println("p_11(L=$L,e=$coup_es)=  ", p_11_zero)
+        
         for j in 1:15
             @inbounds begin
-                coup_es = 5 * (j-1)*coup_e_base
+                coup_es = 0.3 * j*coup_e_base
                 sumtrace = Sum_trace(L, coup_es)
                 p_11 = sumtrace / k_normc
 
 
-                push!(p_data, (Float64(coup_es), Float64(p_11)))
+                push!(p_data, (Float64(coup_es), Float64((p_11-p_11_zero)/p_11_zero)))
                 println(' ')
                 println("p_11(L=$L,e=$coup_es)=  ", p_11)
             end
@@ -329,7 +329,7 @@ using Plots
         xlabel="Coupling Strength (coup_e)",
         ylabel="Oneloop p_11",
         legend=:topleft,
-        xlims=(0, x_max),
+        xlims=(x_min, x_max),
         dpi=300)
 
     for (L, data) in sort(collect(results), by=x -> x[1])
