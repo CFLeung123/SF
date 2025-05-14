@@ -20,14 +20,17 @@ m = 0
 const theta = Float64(pi) / 5
 const c_sw = 1
 const rho = 1
-#coup_e = 0 #QED off
-coup_e = 1
-const coup_e_base = sqrt(4 * Float64(pi) * Float64(0.0072973525693))
+#fine structure const alpha = 0 #QED off
+const alpha_base = Float64(0.0072973525693)
 const Q = Float64(-1 / 3)   #uptype Q=+2/3 downtype Q=-1/3
 # photon = \varphi * Q * \frac{e}{a}
-const phiQED = Float64(pi/3)
-const phipQED = Float64(pi/3)
-
+const phiQED = Float64(-pi/4)
+const phipQED = Float64(-3pi/4)
+const m_e = Float64(0.511) # mass of eletron
+# set maximum energy scale as 100 MeV
+const scale_en = 10000
+alpha_max = alpha_base / (1- alpha_base/(3*Float64(pi)) *2*log(scale_en/m_e))
+n = 10 # number of data points exempt 0
 
 println("eta=$eta   nu=$nu   Lmin=$Lmin   Lmax=$Lmax   m=$m   theta=$theta   c_sw=$c_sw   L(space)= $rho *L(time) ")
 
@@ -296,25 +299,25 @@ using Plots
         L = Lmin + i * 4
         k_normc = 12 * L^2 * (sin(Float64(pi) / (3 * L^2)) + sin(2Float64(pi) / (3 * L^2)))
 
-        
         coup_es = 0
         sumtrace = Sum_trace(L, coup_es)
         p_11_zero = sumtrace / k_normc
 
-        push!(p_data, (Float64(coup_es), Float64(0)))
+        push!(p_data, (Float64(0), Float64(0)))
         println(' ')
-        println("p_11(L=$L,e=$coup_es)=  ", p_11_zero)
+        println("p_11(L=$L,e=0)=  ", p_11_zero)
         
-        for j in 1:15
+        for j in 1:n
             @inbounds begin
-                coup_es = 0.3 * j*coup_e_base
+                alpha0 = j* alpha_max / n       #from eletron mass m_e scale to m_e + 100 MeV
+                coup_es = sqrt(4 * Float64(pi) * alpha0)
                 sumtrace = Sum_trace(L, coup_es)
                 p_11 = sumtrace / k_normc
 
-
-                push!(p_data, (Float64(coup_es), Float64((p_11-p_11_zero)/p_11_zero)))
+                #push!(p_data, (Float64(alpha0), Float64(p_11-p_11_zero)/abs(p_11_zero)))
+                push!(p_data, (Float64(alpha0), Float64(p_11-p_11_zero)))
                 println(' ')
-                println("p_11(L=$L,e=$coup_es)=  ", p_11)
+                println("p_11(L=$L,alpha=$alpha0)=  ", p_11)
             end
         end
 
@@ -325,9 +328,9 @@ using Plots
     x_min = minimum(all_x)
     x_max = maximum(all_x)
 
-    plt = plot(title="p_11 vs coup_e (Float64 Precision)",
-        xlabel="Coupling Strength (coup_e)",
-        ylabel="Oneloop p_11",
+    plt = plot(title="p_11 percentage vs alpha (Float64 Precision)",
+        xlabel="Coupling Strength (alpha)",
+        ylabel="Oneloop p_11 deviation",
         legend=:topleft,
         xlims=(x_min, x_max),
         dpi=300)
