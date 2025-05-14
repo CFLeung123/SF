@@ -28,7 +28,7 @@ const phiQED = Float64(-pi/4)
 const phipQED = Float64(-3pi/4)
 const m_e = Float64(0.511) # mass of eletron
 # set maximum energy scale as 100 MeV
-const scale_en = 10000
+const scale_en = 100
 alpha_max = alpha_base / (1- alpha_base/(3*Float64(pi)) *2*log(scale_en/m_e))
 n = 10 # number of data points exempt 0
 
