@@ -24,13 +24,12 @@ const rho = 1
 const alpha_base = Float64(0.0072973525693)
 const Q = Float64(-1 / 3)   #uptype Q=+2/3 downtype Q=-1/3
 # photon = \varphi * Q * \frac{e}{a}
-const phiQED = Float64(-pi/4)
-const phipQED = Float64(-3pi/4)
+const phiQED = Float64(0)
+const phipQED = Float64(2pi)
 const m_e = Float64(0.511) # mass of eletron
 # set maximum energy scale as 100 MeV
 const scale_en = 100
 alpha_max = alpha_base / (1- alpha_base/(3*Float64(pi)) *2*log(scale_en/m_e))
-n = 10 # number of data points exempt 0
 
 println("eta=$eta   nu=$nu   Lmin=$Lmin   Lmax=$Lmax   m=$m   theta=$theta   c_sw=$c_sw   L(space)= $rho *L(time) ")
 
@@ -294,9 +293,9 @@ using Plots
 
 @time begin
     results = Dict{Int,Vector{Tuple{Float64,Float64}}}()
-    for i in 0:1
+    for i in 0:3
         p_data = Tuple{Float64,Float64}[]
-        L = Lmin + i * 4
+        L = Lmin + i^2 * 4
         k_normc = 12 * L^2 * (sin(Float64(pi) / (3 * L^2)) + sin(2Float64(pi) / (3 * L^2)))
 
         coup_es = 0
@@ -307,9 +306,11 @@ using Plots
         println(' ')
         println("p_11(L=$L,e=0)=  ", p_11_zero)
         
+        n = 5 # number of data points exempt 0
+
         for j in 1:n
             @inbounds begin
-                alpha0 = j* alpha_max / n       #from eletron mass m_e scale to m_e + 100 MeV
+                alpha0 = 2*j* alpha_max / n       #from eletron mass m_e scale to m_e + 100 MeV
                 coup_es = sqrt(4 * Float64(pi) * alpha0)
                 sumtrace = Sum_trace(L, coup_es)
                 p_11 = sumtrace / k_normc
@@ -328,7 +329,7 @@ using Plots
     x_min = minimum(all_x)
     x_max = maximum(all_x)
 
-    plt = plot(title="p_11 percentage vs alpha (Float64 Precision)",
+    plt = plot(title="p_11(e)-p_11(0) vs alpha (Float64 Precision)",
         xlabel="Coupling Strength (alpha)",
         ylabel="Oneloop p_11 deviation",
         legend=:topleft,
