@@ -1,5 +1,5 @@
 using Plots
-
+using Quadmath
 input_text = """
 p_11(L=4)=  -1.43966187815538833860407283533213198e-02
 
@@ -136,7 +136,7 @@ for line in split(input_text, '\n')
     m = match(r"L=(\d+)\)=\s*(-?[\d.eE+-]+)", line)
     if m !== nothing
         L = parse(Int, m.captures[1])
-        p11 = parse(Float64, m.captures[2])
+        p11 = parse(Float128, m.captures[2])
         push!(L_values, L)
         push!(p11_values, p11)
     end
