@@ -165,14 +165,13 @@ end
 
 function extrapolationf(f)
     shifted_f = shiftf(f)
-    r0f =  R0(shifted_f)
-    r0 = -3.46648579283159934768016463262725566e-02
+    r0f = R0(shifted_f)
     final = similar(r0f, Float128)
     log_term = -1 / (12 * Float128(pi)^2)
 
     @views for l in 1:length(r0f)
         L = l - 1 + Lmin
-        final[l] = -r0f[l]*L
+        final[l] = -r0f[l] * L
         #final[l] = L * (f[l] - (r0f[l]) - (log_term * Float128(log(L))))
         println(' ')
         println("F1(L=$L)= ", final[l])
@@ -182,7 +181,8 @@ function extrapolationf(f)
 end
 
 
-
+L_values = []
+f_values = []
 println(" -------------------------------------------------------- ")
 final1 = extrapolationf(f)
 final = Rnu(2, Rnu(2, Rnu(1, Rnu(1, final1))))
@@ -191,14 +191,35 @@ for l in 1:length(final)
     L = l - 1 + Lmin
     println(' ')
     println("Final(L=$L)= ", final[l])
-    x = (Float128(final[l]) - 0.038282) / 0.038282 * 100
-    append!(error, x)
-    println("abs error = ", final[l] - 0.038282)
-    println("%error = $x %")
+    if L > 0
+        push!(L_values, L)
+        push!(f_values, final[l])
+    end
 end
 
-#Plots
-Lrange = Lmin:length(final)+Lmin-1
-p1 = plot(40:length(final)+Lmin-11, final[37:length(final)-10], seriestype=:scatter, ms=2, ma=0.5, label="Final", xlabel="L", ylabel="Final", title="Plot of Final vs L")
-p3 = plot(40:length(final)+Lmin-1, error[37:length(final)], label="%error", xlabel="L", ylabel="%error", title="Plot of %errors")
-plot(p1, p3, layout=(2, 1))
+# 计算1/L
+inv_L = 1.0 ./ L_values
+
+# 创建图形
+plot(inv_L, f_values,
+    seriestype=:scatter,
+    xlabel="a/L",
+    ylabel="r0",
+    label="Data Points",
+    markersize=2,
+    markercolor=:black,
+    title="r0 vs. a/L",
+    legend=:bottomleft,
+    grid=true,
+    dpi=300)
+xlims!(minimum(inv_L)*0.95, 1.05*maximum(inv_L))
+ylims!(0.9991*minimum(f_values), maximum(f_values))
+baseval = 0.038283
+hline!([baseval],label = "baseline=$baseval", linestyle=:dash, color=:red)
+
+# 保存为高分辨率图片（可选）
+savefig("r1v1.png")
+
+# 显示图形
+display(plot!())
+println(" -------------------------------------------------------- ")
