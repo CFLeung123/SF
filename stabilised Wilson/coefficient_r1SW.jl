@@ -1,3 +1,6 @@
+#using Pkg;Pkg.add("Plots")
+using Plots
+using Quadmath
 # Define the input text
 input_text = """
 p_11(L=4)=  -1.43966187815538833860407283533213198e-02
@@ -124,14 +127,11 @@ p_11(L=64)=  -4.02750747639554640980303257824477769e-02
 """
 
 #Extrapolation
-using DoubleFloats
-using Quadmath
-using Plots
 const delta = 1
 const Lmin = 4
 
 # Extract the numbers using a regular expression
-f = [parse(Float128, match(r"[-+]?\d*\.\d+([eE][-+]?\d+)?", line).match) for line in split(input_text, '\n') if match(r"[-+]?\d*\.\d+([eE][-+]?\d+)?", line)!==nothing]
+f = [parse(Float128, match(r"[-+]?\d*\.\d+([eE][-+]?\d+)?", line).match) for line in split(input_text, '\n') if match(r"[-+]?\d*\.\d+([eE][-+]?\d+)?", line) !== nothing]
 
 print(f)
 
@@ -139,7 +139,7 @@ print(f)
 function R0(f)
     R0f = Array{Float128}(undef, length(f) - delta)
     for i in 1:length(f)-delta
-        L = i - 1 + Lmin
+        L = Lmin - 1 + i
         R0f[i] = Float128(L / delta) * (f[i+delta] - f[i])
     end
     return R0f
@@ -148,30 +148,54 @@ end
 function Rnu(nu, f)
     Rnuf = Array{Float128}(undef, length(f) - delta)
     for i in 1:length(f)-delta
-        L = i - 1 + Lmin
+        L = Lmin - 1 + i
         Rnuf[i] = f[i] + Float128(L / (nu * delta)) * (f[i+delta] - f[i])
     end
     return Rnuf
 end
 
-L_values = []
-f_values = []
-final = Rnu(5, Rnu(5, Rnu(4, Rnu(4, Rnu(3, Rnu(3, Rnu(2, Rnu(2, Rnu(1, Rnu(1, R0(f)))))))))))
-
-for l in 1:length(final)
-    @inbounds begin
-        L = l - 1 + Lmin
-        println(' ')
-        println("Final(L=$L)= ", final[l])
-        println("Abs error=  ", final[l] + 1 / (12 * Float128(pi)^2))
-        println("%error=  ", 100 * (final[l] * (-12 * Float128(pi)^2) - 1))
-        if L>32 
-        push!(L_values, L)
-        push!(f_values, final[l])
-        end
+function shiftf(f)
+    sf = copy(f)
+    for i in 1:length(sf)
+        L = i - 1 + Lmin
+        sf[i] = sf[i] + 1 / (12 * Float128(pi)^2) * Float128(log(L))
     end
+    return sf
 end
 
+function extrapolationf(f)
+    shifted_f = shiftf(f)
+    r0f = R0(shifted_f)
+    final = similar(r0f, Float128)
+    log_term = -1 / (12 * Float128(pi)^2)
+
+    @views for l in 1:length(r0f)
+        L = l - 1 + Lmin
+        final[l] = -r0f[l] * L
+        #final[l] = L * (f[l] - (r0f[l]) - (log_term * Float128(log(L))))
+        println(' ')
+        println("F1(L=$L)= ", final[l])
+    end
+
+    return final
+end
+
+
+L_values = []
+f_values = []
+println(" -------------------------------------------------------- ")
+final1 = extrapolationf(f)
+final = Rnu(2, Rnu(2, Rnu(1, Rnu(1, final1))))
+error = Float128[]
+for l in 1:length(final)
+    L = l - 1 + Lmin
+    println(' ')
+    println("Final(L=$L)= ", final[l])
+    if L > 0
+        push!(L_values, L)
+        push!(f_values, final[l])
+    end
+end
 
 # 计算1/L
 inv_L = 1.0 ./ L_values
@@ -180,20 +204,21 @@ inv_L = 1.0 ./ L_values
 plot(inv_L, f_values,
     seriestype=:scatter,
     xlabel="a/L",
-    ylabel="s0",
+    ylabel="r0",
     label="Data Points",
     markersize=2,
     markercolor=:black,
-    title="s0 vs. a/L",
+    title="r0 vs. a/L",
     legend=:bottomleft,
     grid=true,
     dpi=300)
 xlims!(minimum(inv_L)*0.95, 1.05*maximum(inv_L))
-ylims!(minimum(f_values), maximum(f_values)*0.999999)
-hline!([-0.0084434319],label = "baseline=-0.0084434319", linestyle=:dash, color=:red)
+ylims!(0.9991*minimum(f_values), maximum(f_values))
+baseval = 0.0107301
+hline!([baseval],label = "baseline=$baseval", linestyle=:dash, color=:red)
 
 # 保存为高分辨率图片（可选）
-savefig("s0SWv2.png")
+savefig("r1SWv1.png")
 
 # 显示图形
 display(plot!())

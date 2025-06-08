@@ -156,16 +156,18 @@ end
 
 L_values = []
 f_values = []
-final = Rnu(5, Rnu(5, Rnu(4, Rnu(4, Rnu(3, Rnu(3, Rnu(2, Rnu(2, Rnu(1, Rnu(1, R0(f)))))))))))
+for i in 1:length(f)
+    L = i-1+Lmin
+    f[i] =  f[i] + 1 / (12 * Float128(pi)^2)*Float128(log(L))
+end
+final = Rnu(2, Rnu(2, Rnu(1, Rnu(1, f))))
 
 for l in 1:length(final)
     @inbounds begin
         L = l - 1 + Lmin
         println(' ')
         println("Final(L=$L)= ", final[l])
-        println("Abs error=  ", final[l] + 1 / (12 * Float128(pi)^2))
-        println("%error=  ", 100 * (final[l] * (-12 * Float128(pi)^2) - 1))
-        if L>32 
+        if L>24
         push!(L_values, L)
         push!(f_values, final[l])
         end
@@ -180,20 +182,21 @@ inv_L = 1.0 ./ L_values
 plot(inv_L, f_values,
     seriestype=:scatter,
     xlabel="a/L",
-    ylabel="s0",
+    ylabel="r0",
     label="Data Points",
     markersize=2,
     markercolor=:black,
-    title="s0 vs. a/L",
+    title="r0 vs. a/L",
     legend=:bottomleft,
     grid=true,
     dpi=300)
 xlims!(minimum(inv_L)*0.95, 1.05*maximum(inv_L))
-ylims!(minimum(f_values), maximum(f_values)*0.999999)
-hline!([-0.0084434319],label = "baseline=-0.0084434319", linestyle=:dash, color=:red)
+ylims!(1.00005*minimum(f_values), maximum(f_values))
+baseval = -5.3299e-03
+hline!([baseval],label = "baseline=$baseval", linestyle=:dash, color=:red)
 
 # 保存为高分辨率图片（可选）
-savefig("s0SWv2.png")
+savefig("r0SWv2.png")
 
 # 显示图形
 display(plot!())

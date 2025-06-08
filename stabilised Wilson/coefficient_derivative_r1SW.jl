@@ -124,6 +124,7 @@ dot(p)_11(L=62)=  6.00357535644242935965876309433862625e-01
 dot(p)_11(L=63)=  6.09936671481881221502917323490565056e-01
 
 dot(p)_11(L=64)=  6.19515459945342235707356011774273329e-01
+
 """
 
 #Extrapolation
@@ -131,7 +132,7 @@ const delta = 1
 const Lmin = 4
 
 # Extract the numbers using a regular expression
-f = [parse(Float128, match(r"[-+]?\d*\.\d+([eE][-+]?\d+)?", line).match) for line in split(input_text, '\n') if match(r"[-+]?\d*\.\d+([eE][-+]?\d+)?", line)!==nothing]
+f = [parse(Float128, match(r"[-+]?\d*\.\d+([eE][-+]?\d+)?", line).match) for line in split(input_text, '\n') if match(r"[-+]?\d*\.\d+([eE][-+]?\d+)?", line) !== nothing]
 
 print(f)
 
@@ -139,7 +140,7 @@ print(f)
 function R0(f)
     R0f = Array{Float128}(undef, length(f) - delta)
     for i in 1:length(f)-delta
-        L = Lmin -1 +i
+        L = Lmin - 1 + i
         R0f[i] = Float128(L / delta) * (f[i+delta] - f[i])
     end
     return R0f
@@ -148,7 +149,7 @@ end
 function Rnu(nu, f)
     Rnuf = Array{Float128}(undef, length(f) - delta)
     for i in 1:length(f)-delta
-        L = Lmin -1 +i
+        L = Lmin - 1 + i
         Rnuf[i] = f[i] + Float128(L / (nu * delta)) * (f[i+delta] - f[i])
     end
     return Rnuf
@@ -157,13 +158,14 @@ end
 
 
 function extrapolationf(f)
-    final =  Rnu(2,Rnu(2,Rnu(1,Rnu(1,f))))
+    final = Rnu(2, Rnu(2, Rnu(1, Rnu(1, f))))
+    print(final)
     for l in 1:length(final)
         @inbounds begin
             L = l - 1 + Lmin
-            final[l] = L*(f[l]-final[l])
+            final[l] = L * (f[l] - final[l])
             println(' ')
-        println("F1(L=$L)= ", final[l])
+            println("F1(L=$L)= ", final[l])
         end
     end
     return final
@@ -171,28 +173,49 @@ end
 
 # scale by 1/L
 for i in 1:length(f)
-    L = Lmin-1+i
+    L = Lmin - 1 + i
     f[i] = f[i] / L
-    println(' ')
-    println("f(L=$L)/L= ", f[i])
 end
 println(" -------------------------------------------------------- ")
-final1 = extrapolationf(f)                          # extrapolate l*(p_{1,1}'[l] - R_2^2 R_1^2 p_{1,1}'[l])
-final = Rnu(3,Rnu(3,Rnu(2,Rnu(2,Rnu(1,Rnu(1,final1)))))) # extrapolate r1'
-error = Float128[]
+final1 = extrapolationf(f)
+final = Rnu(3, Rnu(3, Rnu(2, Rnu(2, Rnu(1, Rnu(1, final1))))))
+
+L_values = []
+f_values = []
+
 for l in 1:length(final)
-        L = l - 1 + Lmin
-        println(' ')
-        println("Final(L=$L)= ", final[l])
-        x = (Float128(final[l])-0.00775)/0.00775*100
-        append!(error, x)
-        println("abs error = ",final[l]-0.00775)
-        println("%error = $x %")
+    L = l - 1 + Lmin
+    println(' ')
+    println("Final(L=$L)= ", final[l])
+    if L > 0
+        push!(L_values, L)
+        push!(f_values, final[l])
+    end
 end
 
-#Plots
-Lrange = Lmin:length(final)+Lmin-1
-p1 = plot(30:length(final)+Lmin-1, final,seriestype=:scatter,ms=2, ma=0.5, label="Final", xlabel="L", ylabel="Final", title="Plot of Final vs L")
-p1 = hline!([0.012], label="r1'", linestyle=:dash, color=:red)
-p3 = plot(30:length(final)+Lmin-1, error[27:length(final)], label="%error", xlabel="L", ylabel="%error", title="Plot of %errors from L=30")
-plot(p1, p3, layout=(2,1))
+# 计算1/L
+inv_L = 1.0 ./ L_values
+
+# 创建图形
+plot(inv_L, f_values,
+    seriestype=:scatter,
+    xlabel="a/L",
+    ylabel="d r1 / dz",
+    label="Data Points",
+    markersize=2,
+    markercolor=:black,
+    title="d r1 / dz vs. a/L",
+    legend=:bottomleft,
+    grid=true,
+    dpi=300)
+xlims!(minimum(inv_L) * 0.95, 1.05 * maximum(inv_L))
+ylims!(0.99 * minimum(f_values), maximum(f_values))
+baseval = 0.0077534
+hline!([baseval], label="baseline=$baseval", linestyle=:dash, color=:red)
+
+# 保存为高分辨率图片（可选）
+savefig("dr1SWv1.png")
+
+# 显示图形
+display(plot!())
+println(" -------------------------------------------------------- ")
