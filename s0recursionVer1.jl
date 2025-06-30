@@ -177,7 +177,7 @@ function recursive_extrapolation(data, nu, max_nu, depth)
         f_values = []
         for l in 1:length(new_data)
             L = l - 1 + Lmin
-            if L > 20
+            if L > 32
                 push!(L_values, L)
                 push!(f_values, new_data[l])
             end
@@ -197,7 +197,7 @@ plot(legend=:bottomright, xlabel="L", ylabel="s0", title="Extrapolation Steps", 
 
 # Start extrapolation
 data0 = R0(f)
-final = recursive_extrapolation(data0, 1, 5)
+final = recursive_extrapolation(data0, 1, 7,1)
 
 
 # Add initial R0 data for L>32
@@ -205,7 +205,7 @@ L0_values = []
 f0_values = []
 for l in 1:length(data0)
     L = l - 1 + Lmin
-    if L > 20
+    if L > 32
         push!(L0_values, L)
         push!(f0_values, data0[l])
     end
@@ -217,7 +217,7 @@ L_final_values = []
 f_final_values = []
 for l in 1:length(final)
     L = l - 1 + Lmin
-    if L > 20
+    if L > 32
         push!(L_final_values, L)
         push!(f_final_values, final[l])
     end
@@ -228,7 +228,7 @@ hline!([-0.0084434319], label="baseline=-0.0084434319", linestyle=:dash, color=:
 
 # Set axis limits
 xlims!(minimum(L_final_values), 20+maximum(L_final_values))
-ylims!(1.5*minimum(f_final_values), maximum(f_final_values)*0.99)
+ylims!(-0.00844350, -0.00844340)
 
 # Save and display
 savefig("extrapolation_steps.png")
@@ -238,7 +238,7 @@ display(plot!())
 println("Final Extrapolation Results:")
 for l in 1:length(final)
     L = l - 1 + Lmin
-    if L > 20
+    if L > 32
         result = final[l]
         abs_error = result + 1/(12 * Float128(pi)^2)
         percent_error = 100 * (result * (-12 * Float128(pi)^2) - 1)
